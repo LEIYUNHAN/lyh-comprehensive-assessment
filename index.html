@@ -851,6 +851,17 @@ function getValues() {
 // ──────────────────────────────────────────────────────────────
 let currentScore = 0;
 
+// ──────────────────────────────────────────────────────────────
+// WEBHOOK — 静默推送，fire-and-forget，绝不阻塞 UI
+// ──────────────────────────────────────────────────────────────
+function pushToWebhook(payload) {
+  fetch('https://hook.eu1.make.com/jdxrxhshcc50vb8iyp2pn2sgqgjdgqqe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => { /* 静默忽略所有网络错误，绝不影响前端流程 */ });
+}
+
 function handleSubmit() {
   const ids = ['inp-modeling','inp-economy','inp-operation'];
   const labels = ['建模', '经济', '操作'];
@@ -875,6 +886,14 @@ function handleSubmit() {
   }
 
   currentScore = scores.reduce((a,b)=>a+b,0);
+
+  // ── 校验通过后立即静默推送，不等待响应，不阻塞后续 UI ──
+  pushToWebhook({
+    model_score:     scores[0],
+    economy_score:   scores[1],
+    operation_score: scores[2],
+    total_score:     currentScore
+  });
 
   if (currentScore >= 285) {
     showPage(1);
